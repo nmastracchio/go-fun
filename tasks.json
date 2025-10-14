@@ -1,0 +1,22 @@
+[
+  {
+    "id": "task_1760445100962720000",
+    "title": "Write tests",
+    "description": "Create comprehensive test suite",
+    "priority": 1,
+    "due_date": "2025-10-17T08:31:40.962712-04:00",
+    "completed": false,
+    "created_at": "2025-10-14T08:31:40.962717-04:00",
+    "updated_at": "2025-10-14T08:31:40.962717-04:00"
+  },
+  {
+    "id": "task_1760445235023259000",
+    "title": "Learn Go concurrency",
+    "description": "Study goroutines and channels",
+    "priority": 2,
+    "due_date": "2025-10-14T20:00:00-04:00",
+    "completed": true,
+    "created_at": "2025-10-14T08:33:55.023254-04:00",
+    "updated_at": "2025-10-14T08:34:07.388707-04:00"
+  }
+]
