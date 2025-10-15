@@ -20,7 +20,7 @@ type TaskDueFilter struct {
 	Days int // for ModeNextNDays
 }
 
-func NewTaskDueFilter(input string) (TaskDueFilter, error) {
+func CreateTaskDueFilter(input string) (TaskDueFilter, error) {
 	switch input {
 	case "today":
 		return TaskDueFilter{Mode: ModeToday}, nil

@@ -57,7 +57,7 @@ func (tm *TaskManager) List(ctx context.Context, showCompleted bool, filterPrior
 			continue
 		}
 		if showDue != "" {
-			dueFilter, err := filter.NewTaskDueFilter(showDue)
+			dueFilter, err := filter.CreateTaskDueFilter(showDue)
 			if err != nil {
 				return fmt.Errorf("invalid due filter: %w", err)
 			}
