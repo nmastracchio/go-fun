@@ -128,7 +128,6 @@ func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
 	if err := flagSet.Parse(args); err != nil {
 		return err
 	}
-	fmt.Println(tags)
 	posArgs := flagSet.Args()
 
 	if len(posArgs) < 1 {
