@@ -121,6 +121,7 @@ func normalizeTags(in []string) []string {
 }
 
 func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
+	// todo: figure out best way to handle defined flags vs positional args
 	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
 	var tags tagList
 	flagSet.Var(&tags, "t", "Tag for the task (repeatable or comma-separated)")
@@ -131,7 +132,7 @@ func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
 	posArgs := flagSet.Args()
 
 	if len(posArgs) < 1 {
-		return fmt.Errorf("usage: add <title> [description] [priority] [due-date] [-t tag ...]")
+		return fmt.Errorf("usage: add [-t tag ...] <title> [description] [priority] [due-date]")
 	}
 
 	title := posArgs[0]
@@ -388,7 +389,7 @@ func showHelp() {
 	fmt.Println()
 
 	fmt.Println("Commands:")
-	fmt.Println("  add <title> [description] [priority] [due-date]")
+	fmt.Println("  add [-t tag ...] <title> [description] [priority] [due-date]")
 	fmt.Println("    Add a new task")
 	fmt.Println("    Priority: low, medium, high (default: medium)")
 	fmt.Println("    Date formats: 2006-01-02, 01/02/2006, tomorrow, 1d, 3")
