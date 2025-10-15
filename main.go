@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -92,21 +93,58 @@ func executeCommand(ctx context.Context, tm *cli.TaskManager, command string, ar
 	}
 }
 
+type tagList []string
+
+func (t *tagList) String() string { return strings.Join(*t, ",") }
+func (t *tagList) Set(v string) error {
+	for _, part := range strings.Split(v, ",") {
+		s := strings.TrimSpace(strings.ToLower(part))
+		if s == "" {
+			continue
+		}
+		*t = append(*t, s)
+	}
+	return nil
+}
+
+func normalizeTags(in []string) []string {
+	set := make(map[string]struct{}, len(in))
+	for _, v := range in {
+		set[v] = struct{}{}
+	}
+	out := make([]string, 0, len(set))
+	for v := range set {
+		out = append(out, v)
+	}
+	sort.Strings(out)
+	return out
+}
+
 func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("usage: add <title> [description] [priority] [due-date]")
+	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
+	var tags tagList
+	flagSet.Var(&tags, "t", "Tag for the task (repeatable or comma-separated)")
+	flagSet.Var(&tags, "tag", "Tag for the task (repeatable or comma-separated)")
+	if err := flagSet.Parse(args); err != nil {
+		return err
+	}
+	fmt.Println(tags)
+	posArgs := flagSet.Args()
+
+	if len(posArgs) < 1 {
+		return fmt.Errorf("usage: add <title> [description] [priority] [due-date] [-t tag ...]")
 	}
 
-	title := args[0]
+	title := posArgs[0]
 	description := ""
 	priority := task.Medium
 	dueDate := time.Time{}
 
-	if len(args) > 1 {
-		description = args[1]
+	if len(posArgs) > 1 {
+		description = posArgs[1]
 	}
-	if len(args) > 2 {
-		switch strings.ToLower(args[2]) {
+	if len(posArgs) > 2 {
+		switch strings.ToLower(posArgs[2]) {
 		case "low", "l":
 			priority = task.Low
 		case "medium", "med", "m":
@@ -114,18 +152,20 @@ func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
 		case "high", "h":
 			priority = task.High
 		default:
-			return fmt.Errorf("invalid priority: %s. Use: low, medium, high", args[2])
+			return fmt.Errorf("invalid priority: %s. Use: low, medium, high", posArgs[2])
 		}
 	}
-	if len(args) > 3 {
-		parsedDate, err := parseDate(args[3])
+	if len(posArgs) > 3 {
+		parsedDate, err := parseDate(posArgs[3])
 		if err != nil {
 			return fmt.Errorf("invalid date format: %w", err)
 		}
 		dueDate = parsedDate
 	}
 
-	return tm.Add(ctx, title, description, priority, dueDate)
+	normalizedTags := normalizeTags(tags)
+
+	return tm.Add(ctx, title, description, priority, dueDate, normalizedTags)
 }
 
 func handleList(ctx context.Context, tm *cli.TaskManager, args []string) error {

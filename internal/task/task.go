@@ -38,10 +38,11 @@ type Task struct {
 	Completed   bool      `json:"completed"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	Tags        []string  `json:"tags,omitempty"`
 }
 
 // NewTask creates a new task with the given parameters
-func NewTask(title, description string, priority Priority, dueDate time.Time) *Task {
+func NewTask(title, description string, priority Priority, dueDate time.Time, tags []string) *Task {
 	now := time.Now()
 	return &Task{
 		ID:          generateID(),
@@ -52,6 +53,7 @@ func NewTask(title, description string, priority Priority, dueDate time.Time) *T
 		Completed:   false,
 		CreatedAt:   now,
 		UpdatedAt:   now,
+		Tags:        tags,
 	}
 }
 

@@ -26,8 +26,8 @@ func NewTaskManager(s storage.Storage) *TaskManager {
 }
 
 // Add creates a new task
-func (tm *TaskManager) Add(ctx context.Context, title, description string, priority task.Priority, dueDate time.Time) error {
-	newTask := task.NewTask(title, description, priority, dueDate)
+func (tm *TaskManager) Add(ctx context.Context, title, description string, priority task.Priority, dueDate time.Time, tags []string) error {
+	newTask := task.NewTask(title, description, priority, dueDate, tags)
 	return tm.storage.Add(ctx, newTask)
 }
 
@@ -311,6 +311,10 @@ func (tm *TaskManager) displayTask(t *task.Task) {
 
 	if t.Description != "" {
 		fmt.Printf("   📝 %s\n", t.Description)
+	}
+
+	if t.Tags != nil {
+		fmt.Printf("   🏷️  %v\n", t.Tags)
 	}
 
 	// Due date
