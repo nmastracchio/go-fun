@@ -88,23 +88,11 @@ func executeCommand(ctx context.Context, tm *cli.TaskManager, command string, ar
 		return handleExport(ctx, tm, args)
 	case "export-all":
 		return handleExportAll(ctx, tm, args)
+	case "watch":
+		return handleWatch(ctx, tm, args)
 	default:
 		return fmt.Errorf("unknown command: %s. Use 'go-fun -help' for usage", command)
 	}
-}
-
-type tagList []string
-
-func (t *tagList) String() string { return strings.Join(*t, ",") }
-func (t *tagList) Set(v string) error {
-	for _, part := range strings.Split(v, ",") {
-		s := strings.TrimSpace(strings.ToLower(part))
-		if s == "" {
-			continue
-		}
-		*t = append(*t, s)
-	}
-	return nil
 }
 
 func normalizeTags(in []string) []string {
@@ -121,30 +109,53 @@ func normalizeTags(in []string) []string {
 }
 
 func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
-	// todo: figure out best way to handle defined flags vs positional args
 	flagSet := flag.NewFlagSet("add", flag.ContinueOnError)
-	var tags tagList
-	flagSet.Var(&tags, "t", "Tag for the task (repeatable or comma-separated)")
-	flagSet.Var(&tags, "tag", "Tag for the task (repeatable or comma-separated)")
+
+	title := ""
+	description := ""
+	dueDateStr := ""
+	priorityStr := ""
+
+	dueDate := time.Time{}
+	priority := task.Medium
+	tags := make(cli.TagList, 0)
+
+	titleDesc := "Title for the task"
+	flagSet.StringVar(&title, "t", title, titleDesc)
+	flagSet.StringVar(&title, "title", title, titleDesc)
+
+	descDesc := "Description for the task"
+	flagSet.StringVar(&description, "d", description, descDesc)
+	flagSet.StringVar(&description, "desc", description, descDesc)
+	flagSet.StringVar(&description, "description", description, descDesc)
+
+	duedateDesc := "Due date for the task (yyyy-mm-dd)"
+	flagSet.StringVar(&dueDateStr, "D", dueDateStr, duedateDesc)
+	flagSet.StringVar(&dueDateStr, "duedate", dueDateStr, duedateDesc)
+
+	priorityDesc := "Priority for the task (l, m, h)"
+	flagSet.StringVar(&priorityStr, "p", priorityStr, priorityDesc)
+	flagSet.StringVar(&priorityStr, "priority", priorityStr, priorityDesc)
+
+	tagDesc := "Tag for the task (repeatable or comma-separated)"
+	flagSet.Var(&tags, "T", tagDesc)
+	flagSet.Var(&tags, "tag", tagDesc)
+
 	if err := flagSet.Parse(args); err != nil {
 		return err
 	}
-	posArgs := flagSet.Args()
 
-	if len(posArgs) < 1 {
-		return fmt.Errorf("usage: add [-t tag ...] <title> [description] [priority] [due-date]")
+	// -t --title
+	if title == "" {
+		return fmt.Errorf("title is required")
 	}
-
-	title := posArgs[0]
-	description := ""
-	priority := task.Medium
-	dueDate := time.Time{}
-
-	if len(posArgs) > 1 {
-		description = posArgs[1]
+	// -d --desc --description
+	if description == "" {
+		return fmt.Errorf("description is required")
 	}
-	if len(posArgs) > 2 {
-		switch strings.ToLower(posArgs[2]) {
+	// -p --priority
+	if priorityStr != "" {
+		switch strings.ToLower(priorityStr) {
 		case "low", "l":
 			priority = task.Low
 		case "medium", "med", "m":
@@ -152,17 +163,19 @@ func handleAdd(ctx context.Context, tm *cli.TaskManager, args []string) error {
 		case "high", "h":
 			priority = task.High
 		default:
-			return fmt.Errorf("invalid priority: %s. Use: low, medium, high", posArgs[2])
+			return fmt.Errorf("invalid priority: %s. Use: low, medium, high", priorityStr)
 		}
 	}
-	if len(posArgs) > 3 {
-		parsedDate, err := parseDate(posArgs[3])
+	// -D --duedate
+	if dueDateStr != "" {
+		parsedDate, err := parseDate(dueDateStr)
 		if err != nil {
 			return fmt.Errorf("invalid date format: %w", err)
 		}
 		dueDate = parsedDate
 	}
 
+	// -T --tag
 	normalizedTags := normalizeTags(tags)
 
 	return tm.Add(ctx, title, description, priority, dueDate, normalizedTags)
@@ -309,6 +322,11 @@ func handleExportAll(ctx context.Context, tm *cli.TaskManager, args []string) er
 	return tm.ConcurrentExport(ctx, formats, baseFilename)
 }
 
+func handleWatch(ctx context.Context, tm *cli.TaskManager, args []string) error {
+	// todo: playground area...
+	return nil
+}
+
 func parseDate(dateStr string) (time.Time, error) {
 	// Handle special cases first
 	switch strings.ToLower(dateStr) {
@@ -389,10 +407,11 @@ func showHelp() {
 	fmt.Println()
 
 	fmt.Println("Commands:")
-	fmt.Println("  add [-t tag ...] <title> [description] [priority] [due-date]")
+	fmt.Println("  add [-t --title ...] [-d --desc --description ...] [-p --priority ...] [-D --duedate ...] [-T --tag ...]")
 	fmt.Println("    Add a new task")
-	fmt.Println("    Priority: low, medium, high (default: medium)")
-	fmt.Println("    Date formats: 2006-01-02, 01/02/2006, tomorrow, 1d, 3")
+	fmt.Println("    Priority: l/low, m/med/medium, h/high (default: medium)")
+	fmt.Println("    Duedate formats: 2006-01-02, 01/02/2006, tomorrow, 1d, 3")
+	fmt.Println("    Tag: Single, repeated flag, or comma-separated strings")
 	fmt.Println()
 
 	fmt.Println("  list [flags]")
